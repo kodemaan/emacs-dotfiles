@@ -16,6 +16,7 @@
 (tool-bar-mode   -1)
 (tooltip-mode    -1)
 (menu-bar-mode   -1)
+(setq-default indent-tabs-mode nil)
 (add-to-list 'default-frame-alist '(font . "Fira Code"))
 (add-to-list 'default-frame-alist '(height . 24))
 (add-to-list 'default-frame-alist '(width . 80))
@@ -59,7 +60,8 @@
 (use-package doom-themes
   :ensure t
   :config
-  (load-theme 'doom-one t))
+  (load-theme 'doom-one t)
+)
 
 ;; Helm
 (use-package helm
@@ -80,7 +82,8 @@
   helm-autoresize-max-height 0
   helm-autoresize-min-height 20)
   :config
-  (helm-mode 1))
+  (helm-mode 1)
+)
 
 ;; Which Key
 (use-package which-key
@@ -89,7 +92,8 @@
   (setq which-key-separator " ")
   (setq which-key-prefix-prefix "+")
   :config
-  (which-key-mode 1))
+  (which-key-mode 1)
+)
 
 ;; Counsel for various file searching things
 (use-package counsel :ensure t)
@@ -104,8 +108,10 @@
   :config
   (setq helm-swoop-pre-input-function (lambda () ""))
 )
+
 (use-package helm-ag :ensure t)
 
+(use-package company :ensure t)
 (use-package rjsx-mode :ensure t)
 (add-to-list 'auto-mode-alist '(".js'" . rjsx-mode))
 
@@ -115,9 +121,12 @@
   :init
   (setq projectile-require-project-root nil)
   :config
-  (projectile-mode 1))
+  (projectile-mode 1)
+)
 
 (use-package evil-magit :ensure t)
+(add-hook 'rjsx-mode-hook 'company-mode)
+
 ;; Custom keybinding
 (use-package general
   :ensure t
@@ -156,8 +165,8 @@
   "wj"  '(evil-window-down :which-key "move to window down")
   "wl"  '(evil-window-right :which-key "move to window right")
   "wk"  '(evil-window-up :which-key "move to window up")
-  "w/"  '((split-window-right evil-window-right) :which-key "split window right")
-  "w-"  '((split-window-below evil-window-down) :which-key "split window down")
+  "w/"  '(split-window-right :which-key "split window right")
+  "w-"  '(split-window-below :which-key "split window down")
 ))
 
 ;; Fancy titlebar for MacOS
@@ -174,6 +183,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(js-indent-level 2)
  '(package-selected-packages
    (quote
     (helm-ag general projectile counsel which-key helm doom-themes evil-escape evil use-package))))

@@ -28,10 +28,6 @@
 (add-to-list 'default-frame-alist '(height . 24))
 (add-to-list 'default-frame-alist '(width . 80))
 
-;; Ensure usr local bin is set
-(add-to-list 'exec-path "/usr/local/bin/")
-
-
 ;; Package configs
 (require 'package)
 (setq package-enable-at-startup nil)
@@ -40,6 +36,40 @@
                          ("melpa" . "https://melpa.org/packages/")))
 (package-initialize)
 
+;; start enable ligatures for emacs
+(when (window-system)
+  (set-frame-font "Fira Code"))
+(let ((alist '((33 . ".\\(?:\\(?:==\\|!!\\)\\|[!=]\\)")
+               (35 . ".\\(?:###\\|##\\|_(\\|[#(?[_{]\\)")
+               (36 . ".\\(?:>\\)")
+               (37 . ".\\(?:\\(?:%%\\)\\|%\\)")
+               (38 . ".\\(?:\\(?:&&\\)\\|&\\)")
+               (42 . ".\\(?:\\(?:\\*\\*/\\)\\|\\(?:\\*[*/]\\)\\|[*/>]\\)")
+               (43 . ".\\(?:\\(?:\\+\\+\\)\\|[+>]\\)")
+               (45 . ".\\(?:\\(?:-[>-]\\|<<\\|>>\\)\\|[<>}~-]\\)")
+               (46 . ".\\(?:\\(?:\\.[.<]\\)\\|[.=-]\\)")
+               (47 . ".\\(?:\\(?:\\*\\*\\|//\\|==\\)\\|[*/=>]\\)")
+               (48 . ".\\(?:x[a-zA-Z]\\)")
+               (58 . ".\\(?:::\\|[:=]\\)")
+               (59 . ".\\(?:;;\\|;\\)")
+               (60 . ".\\(?:\\(?:!--\\)\\|\\(?:~~\\|->\\|\\$>\\|\\*>\\|\\+>\\|--\\|<[<=-]\\|=[<=>]\\||>\\)\\|[*$+~/<=>|-]\\)")
+               (61 . ".\\(?:\\(?:/=\\|:=\\|<<\\|=[=>]\\|>>\\)\\|[<=>~]\\)")
+               (62 . ".\\(?:\\(?:=>\\|>[=>-]\\)\\|[=>-]\\)")
+               (63 . ".\\(?:\\(\\?\\?\\)\\|[:=?]\\)")
+               (91 . ".\\(?:]\\)")
+               (92 . ".\\(?:\\(?:\\\\\\\\\\)\\|\\\\\\)")
+               (94 . ".\\(?:=\\)")
+               (119 . ".\\(?:ww\\)")
+               (123 . ".\\(?:-\\)")
+               (124 . ".\\(?:\\(?:|[=|]\\)\\|[=>|]\\)")
+               (126 . ".\\(?:~>\\|~~\\|[>=@~-]\\)")
+               )
+             ))
+  (dolist (char-regexp alist)
+    (set-char-table-range composition-function-table (car char-regexp)
+                          `([,(cdr char-regexp) 0 font-shape-gstring]))))
+
+;; end enable ligatures for emacs
 ;; Bootstrap `use-package`
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
@@ -52,6 +82,15 @@
   (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
 )
+
+(setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
+    (setq exec-path (append exec-path '("/usr/local/bin")))
+
+(use-package auto-package-update
+  :config
+  (setq auto-package-update-delete-old-versions t)
+  (setq auto-package-update-hide-results t)
+  (auto-package-update-maybe))
 
 (use-package nlinum-relative
   :config
@@ -79,11 +118,19 @@
   (setq-default evil-escape-key-sequence "lk")
 )
 
-;; Theme
-(use-package doom-themes
+(use-package ob-http)
+(use-package org
   :config
-  (load-theme 'doom-one t)
-)
+  (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
+  (setq org-log-done t)
+  (transient-mark-mode 1)
+  (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((emacs-lisp . t)
+       (lisp . t)
+       (shell . t)
+       (http . t)
+       (sql . t))))
 
 (use-package flycheck
   :config
@@ -168,6 +215,10 @@
 (add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
 
 (use-package php-mode)
+(use-package yaml-mode
+  :config
+  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
+)
 (add-to-list 'auto-mode-alist '("\\.php$" . php-mode))
 
 
@@ -192,6 +243,7 @@
   (interactive)
   (load-file (concat user-emacs-directory "init.el")))
 ;; Custom keybinding
+(use-package nimbus-theme)
 (use-package general
   :config (general-define-key
   :states '(normal visual insert emacs)
@@ -213,9 +265,15 @@
   "fed" '(pdc/find-initfile :which-key "Open Init File")
   "fer" '(pdc/reload-initfile :which-key "Reload File")
 
+  ;; org-mode commands
+  "o"   '(:ignore t :which-key "Org mode")
+  "oe"  '(org-ctrl-c-ctrl-c :which-key "execute")
+  "ot"  '(org-todo :which-key "org-todo")
+  "o RET"'(org-meta-return :which-key "org-meta-return")
+
   ;; Project
   "p"   '(:ignore t :which-key "Project")
-  "pf"  '(helm-projectile-find-file :which-key "find file in project")
+  "pf"  '(helm-projectile :which-key "find file in project")
   "pp"  '(helm-projectile-switch-project :which-key "switch project")
   "pt"  '(helm-projectile-ag :which-key "find text in project")
 
@@ -238,6 +296,10 @@
   "wk"  '(evil-window-up :which-key "move to window up")
   "w/"  '(split-window-right :which-key "split window right")
   "w-"  '(split-window-below :which-key "split window down")
+
+  ;; restclient
+  "rs"  '(restclient-http-send-current :which-key "send request")
+  "rh"  '(browse-url-of-buffer :which-key "browse buffer as html")
 ))
 
 ;; Fancy titlebar for MacOS
@@ -257,7 +319,8 @@
  '(js-indent-level 2)
  '(package-selected-packages
    (quote
-    (helm-ag general projectile counsel which-key helm doom-themes evil-escape evil use-package))))
+    (ob-http pdf-tools restclient magit-p4 magit-gitflow helm-ag general projectile counsel which-key helm doom-themes evil-escape evil use-package)))
+ '(safe-local-variable-values (quote ((org-confirm-babel-evaluate)))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

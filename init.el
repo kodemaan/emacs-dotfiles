@@ -1,15 +1,15 @@
-(setq delete-old-versions -1 )		; delete excess backup versions silently
-(setq version-control t )		; use version control
-(setq vc-make-backup-files t )		; make backups file even when in version controlled dir
+(setq delete-old-versions -1)		; delete excess backup versions silently
+(setq version-control t)		; use version control
+(setq vc-make-backup-files t)		; make backups file even when in version controlled dir
 (setq backup-directory-alist `(("." . "~/.emacs.d/backups")) ) ; which directory to put backups file
-(setq vc-follow-symlinks t )				       ; don't ask for confirmation when opening symlinked file
+(setq vc-follow-symlinks t)				       ; don't ask for confirmation when opening symlinked file
 (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)) ) ;transform backups file name
-(setq inhibit-startup-screen t )	; inhibit useless and old-school startup screen
-(setq ring-bell-function 'ignore )	; silent bell when you make a mistake
-(setq coding-system-for-read 'utf-8 )	; use utf-8 by default
-(setq coding-system-for-write 'utf-8 )
+(setq inhibit-startup-screen t)	; inhibit useless and old-school startup screen
+(setq ring-bell-function 'ignore)	; silent bell when you make a mistake
+(setq coding-system-for-read 'utf-8)	; use utf-8 by default
+(setq coding-system-for-write 'utf-8)
 (setq sentence-end-double-space nil)	; sentence SHOULD end with only a point.
-(setq default-fill-column 80)		; toggle wrapping text at the 80th character
+(setq default-fill-column 120)		; toggle wrapping text at the 80th character
 (setq initial-scratch-message "Welcome in Emacs") ; print a default message in the empty scratch buffer opened at startup
 (setq use-package-always-ensure t) ; Always ensure listed packages, why would i not want this? :D
 
@@ -19,10 +19,8 @@
    (file-chase-links load-file-name)))
 
 ;; Minimal UI
-(scroll-bar-mode -1)
 (tool-bar-mode   -1)
 (tooltip-mode    -1)
-(menu-bar-mode   -1)
 (setq-default indent-tabs-mode nil)
 (add-to-list 'default-frame-alist '(font . "Fira Code"))
 (add-to-list 'default-frame-alist '(height . 24))
@@ -96,6 +94,7 @@
   :config
   (nlinum-relative-setup-evil)
   (add-hook 'prog-mode-hook 'nlinum-relative-mode)
+  (setq nlinum-relative-redisplay-delay 0.3)      ;; delay
   (setq nlinum-relative-current-symbol "")
 )
 
@@ -103,19 +102,11 @@
 (use-package evil
   :config
   (evil-mode 1)
-  (setq-default evil-escape-delay 0.2)
-  :init
-  (evil-escape-mode)
 )
 
 (use-package powerline
   :config
   (powerline-default-theme)
-)
-;; Evil Escape, map lk to escape
-(use-package evil-escape
-  :init
-  (setq-default evil-escape-key-sequence "lk")
 )
 
 (use-package ob-http)
@@ -135,7 +126,7 @@
 (use-package flycheck
   :config
   (add-hook 'after-init-hook #'global-flycheck-mode)
-  (flycheck-add-mode 'javascript-eslint 'rjsx-mode)
+  ;;(flycheck-add-mode 'javascript-eslint 'rjsx-mode)
 )
 
 (defun my/use-eslint-from-node-modules ()
@@ -179,6 +170,8 @@
   (which-key-mode 1)
 )
 
+(use-package ox-reveal)
+
 ;; Counsel for various file searching things
 (use-package counsel)
 (use-package helm-projectile
@@ -201,10 +194,8 @@
   :init
   (add-hook 'after-init-hook 'global-company-mode)
 )
-(use-package company-tern)
-
-(add-to-list 'company-backends 'company-tern)
-(add-hook 'rjsx-mode-hook (lambda () (tern-mode) (company-mode)))
+(defvar company-mode/enable-yas t
+  "Enable yasnippet for all backends.")
 
 (use-package rjsx-mode
   :config
@@ -212,7 +203,7 @@
   (define-key rjsx-mode-map (kbd "C-d") nil)
   (define-key rjsx-mode-map ">" nil)
 )
-(add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
+;; (add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
 
 (use-package php-mode)
 (use-package yaml-mode
@@ -230,7 +221,35 @@
   (projectile-mode 1)
 )
 
+(use-package yasnippet
+  :ensure t
+  :init
+  (yas-global-mode 1)
+  :config
+  (add-to-list 'yas-snippet-dirs (locate-user-emacs-file "snippets")))
+
+(use-package yasnippet-snippets)
+(use-package react-snippets)
+
+(defun setup-tide-mode ()
+  "Set up Tide mode."
+  (interactive)
+  (tide-setup)
+  (flycheck-mode +1)
+  (setq flycheck-check-syntax-automatically '(save-mode-enabled))
+  (eldoc-mode +1)
+  (tide-hl-identifier-mode +1)
+  (company-mode +1))
+
+(use-package tide
+  :ensure t
+  :config
+  (setq company-tooltip-align-annotations t)
+  (add-hook 'before-save-hook 'tide-format-before-save)
+  (add-hook 'typescript-mode-hook #'setup-tide-mode))
+
 (use-package eslint-fix)
+(use-package magit)
 (use-package evil-magit)
 
 ;; Custom functions
@@ -316,10 +335,11 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(eslint-fix-executable "npx eslint")
  '(js-indent-level 2)
  '(package-selected-packages
    (quote
-    (ob-http pdf-tools restclient magit-p4 magit-gitflow helm-ag general projectile counsel which-key helm doom-themes evil-escape evil use-package)))
+    (restart-emacs markdown-preview-mode smeargle ob-http pdf-tools restclient magit-p4 magit-gitflow helm-ag general projectile counsel which-key helm doom-themes evil-escape evil use-package)))
  '(safe-local-variable-values (quote ((org-confirm-babel-evaluate)))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
